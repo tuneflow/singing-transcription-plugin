@@ -109,21 +109,7 @@ class TranscribeSinging(TuneflowPlugin):
                         "step": 0.1
                     }
                 },
-            },
-            "midi": { # 临时
-                "displayName": {
-                    "zh": '轨道',
-                    "en": 'Track',
-                },
-                "defaultValue": None,
-                "widget": {
-                    "type": WidgetType.TrackSelector.value,
-                    "config": {
-                        "alwaysShowTrackInfo": True,
-                        "allowedTrackTypes": [TrackType.MIDI_TRACK],
-                    },
-                },
-            },
+            }
         }
 
     def init(self, song: Song, read_apis: ReadAPIs):
@@ -134,16 +120,14 @@ class TranscribeSinging(TuneflowPlugin):
 
         audio = params["audio"]
         # print(audio.keys())
-
-        new_midi_track = song.create_track(1)
+        
         # print(dir(song._proto.tracks))
         # print(dir(new_midi_track.clips))
-        print(new_midi_track.type)
+        # print(new_midi_track.type)
 
         # new_track_id = params["midi"]
         # new_track = song.get_track_by_id(track_id=new_track_id)
         # new_clip = new_track.create_clip()
-
 
         # # createTrack({
         # #         type: TrackType.MIDI_TRACK,
@@ -161,6 +145,10 @@ class TranscribeSinging(TuneflowPlugin):
             if track.get_type() != TrackType.AUDIO_TRACK:
                 raise Exception("Can only transcribe audio tracks")
             
+            track_index = song.get_track_index_by_id(track_id=track_id) # selected audio track
+            # print(track_index)
+            new_midi_track = song.create_track(type=TrackType.MIDI_TRACK, index=track_index+1)
+            
             for clip in track.get_clips():
                 if clip.get_type() != ClipType.AUDIO_CLIP:
                     raise Exception("Skip non-audio clip")
@@ -168,20 +156,20 @@ class TranscribeSinging(TuneflowPlugin):
                 if audio_clip_data is None or audio_clip_data.audio_file_path is None:
                     continue
                 # print(audio_clip_data.audio_file_path)
-                self._transcribe_clip(audio_clip_data.audio_file_path, params["doSeparation"], params["onsetThreshold"], params["silenceThreshold"])
- 
+                
+                # self._transcribe_clip(audio_clip_data.audio_file_path, params["doSeparation"], params["onsetThreshold"], params["silenceThreshold"])
 
         elif audio["sourceType"] == 'file':
             print(type(audio["audioInfo"]))
 
-        # # print(sys.getsizeof(audio["audioInfo"]))
-        # # aro = audioread.ffdec.FFmpegAudioFile(audio["audioInfo"])
-        # # y, sr = librosa.load(aro)
-        # # print(y)
-        # # print(audio["audioInfo"].decode(encoding='UTF-16'))
+        # print(sys.getsizeof(audio["audioInfo"]))
+        # aro = audioread.ffdec.FFmpegAudioFile(audio["audioInfo"])
+        # y, sr = librosa.load(aro)
+        # print(y)
+        # print(audio["audioInfo"].decode(encoding='UTF-16'))
 
-        # # separate = params["separate"]
-        # # print(separate)
+        # separate = params["separate"]
+        # print(separate)
 
     def _transcribe_clip(self, audio_file_path, do_separation=False, onset_threshold=0.4, silence_threshold=0.5):
         test_dataset = SeqDataset(audio_file_path, song_id='1', do_svs=do_separation)

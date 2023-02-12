@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from singing_transcription import TranscribeSinging
-from transpose_track import TransposeTrack
+# from transpose_track import TransposeTrack
 from tuneflow_devkit import Debugger
 
 if __name__ == "__main__":
