@@ -135,6 +135,8 @@ class TranscribeSinging(TuneflowPlugin):
         # #         assignDefaultSamplerPlugin: true,
         # #     });
 
+        song.print_all_tracks()
+
         if audio["sourceType"] == 'audioTrack':
             # print(type(audio["audioInfo"]))
             track_id = audio["audioInfo"]
@@ -147,16 +149,33 @@ class TranscribeSinging(TuneflowPlugin):
             
             track_index = song.get_track_index_by_id(track_id=track_id) # selected audio track
             # print(track_index)
-            new_midi_track = song.create_track(type=TrackType.MIDI_TRACK, index=track_index+1)
+            new_midi_track = song.create_track(type=TrackType.MIDI_TRACK)
             
+            clip_index = 0
             for clip in track.get_clips():
+
+                # print(dir(track._proto))
+                # print(dir(clip._proto))
+
                 if clip.get_type() != ClipType.AUDIO_CLIP:
                     raise Exception("Skip non-audio clip")
                 audio_clip_data = clip.get_audio_clip_data()
                 if audio_clip_data is None or audio_clip_data.audio_file_path is None:
                     continue
                 # print(audio_clip_data.audio_file_path)
-                
+
+                new_clip = new_midi_track.create_clip(
+                    type=ClipType.MIDI_CLIP,
+                    clip_start_tick=clip.get_clip_start_tick(),
+                    clip_end_tick=clip.get_clip_end_tick()
+                )
+
+                new_midi_track.insert_clip(index=clip_index, clip=new_clip)
+
+                print(clip.get_clip_start_tick(), clip.get_clip_end_tick())
+
+                clip_index = clip_index + 1
+
                 # self._transcribe_clip(audio_clip_data.audio_file_path, params["doSeparation"], params["onsetThreshold"], params["silenceThreshold"])
 
         elif audio["sourceType"] == 'file':
@@ -170,6 +189,11 @@ class TranscribeSinging(TuneflowPlugin):
 
         # separate = params["separate"]
         # print(separate)
+
+        song.insert_track(index=track_index+1, track=new_midi_track)
+        print(track.print_all_clips())
+        print(new_midi_track.print_all_clips())
+        print(song.print_all_tracks())
 
     def _transcribe_clip(self, audio_file_path, do_separation=False, onset_threshold=0.4, silence_threshold=0.5):
         test_dataset = SeqDataset(audio_file_path, song_id='1', do_svs=do_separation)
