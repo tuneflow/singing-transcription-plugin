@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tuneflow_py import TuneflowPlugin, Song, ReadAPIs, ParamDescriptor, WidgetType, TrackType, ClipType, Note, Track
+from tuneflow_py import TuneflowPlugin, Song, ReadAPIs, ParamDescriptor, WidgetType, TrackType, ClipType, Note, Track, Clip
 from typing import Any
 import sys
 import librosa
@@ -114,7 +114,7 @@ class TranscribeSinging(TuneflowPlugin):
 
     def init(self, song: Song, read_apis: ReadAPIs):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.predictor = EffNetPredictor(device=device, model_path="models/1005_e_4")
+        self.predictor = EffNetPredictor(device=device, model_path="models/1005_e_4")
 
     def run(self, song: Song, params: dict[str, Any], read_apis: ReadAPIs):
 
@@ -149,7 +149,7 @@ class TranscribeSinging(TuneflowPlugin):
             
             track_index = song.get_track_index_by_id(track_id=track_id) # selected audio track
             # print(track_index)
-            new_midi_track = song.create_track(type=TrackType.MIDI_TRACK)
+            new_midi_track = song.create_track(type=TrackType.MIDI_TRACK, assign_default_sampler_plugin=True)
             
             clip_index = 0
             for clip in track.get_clips():
@@ -164,19 +164,19 @@ class TranscribeSinging(TuneflowPlugin):
                     continue
                 # print(audio_clip_data.audio_file_path)
 
-                new_clip = new_midi_track.create_clip(
-                    type=ClipType.MIDI_CLIP,
+                new_clip = new_midi_track.create_midi_clip(
                     clip_start_tick=clip.get_clip_start_tick(),
-                    clip_end_tick=clip.get_clip_end_tick()
+                    clip_end_tick=clip.get_clip_end_tick(),
+                    insert_clip=True
                 )
 
-                new_midi_track.insert_clip(index=clip_index, clip=new_clip)
+                # new_midi_track.insert_clip(index=clip_index, clip=new_clip)
 
-                print(clip.get_clip_start_tick(), clip.get_clip_end_tick())
+                # print(clip.get_clip_start_tick(), clip.get_clip_end_tick())
 
-                clip_index = clip_index + 1
+                # clip_index = clip_index + 1
 
-                # self._transcribe_clip(audio_clip_data.audio_file_path, params["doSeparation"], params["onsetThreshold"], params["silenceThreshold"])
+                self._transcribe_clip(song, new_clip, audio_clip_data.audio_file_path, params["doSeparation"], params["onsetThreshold"], params["silenceThreshold"])
 
         elif audio["sourceType"] == 'file':
             print(type(audio["audioInfo"]))
@@ -190,15 +190,36 @@ class TranscribeSinging(TuneflowPlugin):
         # separate = params["separate"]
         # print(separate)
 
-        song.insert_track(index=track_index+1, track=new_midi_track)
-        print(track.print_all_clips())
-        print(new_midi_track.print_all_clips())
-        print(song.print_all_tracks())
+        # song.insert_track(index=track_index+1, track=new_midi_track)
+        # print(track.print_all_clips())
+        # print(new_midi_track.print_all_clips())
+        # print(song.print_all_tracks())
 
-    def _transcribe_clip(self, audio_file_path, do_separation=False, onset_threshold=0.4, silence_threshold=0.5):
+    def _transcribe_clip(self,
+                         song: Song,
+                         new_clip: Clip,
+                         audio_file_path, 
+                         do_separation=False, 
+                         onset_threshold=0.4, 
+                         silence_threshold=0.5,
+                         ):
         test_dataset = SeqDataset(audio_file_path, song_id='1', do_svs=do_separation)
 
         results = {}
         results = self.predictor.predict(test_dataset, results=results, onset_thres=onset_threshold, offset_thres=silence_threshold)
 
         print(results['1'])
+
+        for notes in results['1']:
+            note_start_time_within_clip = notes[0]
+            note_start_tick = song.seconds_to_tick(note_start_time_within_clip) + new_clip.get_clip_start_tick()
+            note_end_time_within_clip = notes[1]
+            note_end_tick = song.seconds_to_tick(note_end_time_within_clip) + new_clip.get_clip_start_tick()
+            note_pitch = notes[2]
+
+            new_clip.create_note(
+                pitch=note_pitch,
+                velocity=100,
+                start_tick=note_start_tick,
+                end_tick=note_end_tick
+            )
