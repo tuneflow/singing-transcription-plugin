@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from tuneflow_py import TuneflowPlugin, Song, ReadAPIs, ParamDescriptor, WidgetType, TrackType, ClipType, Note, Track, Clip
 from typing import Any
-import sys
-import librosa
-import audioread.ffdec  # Use ffmpeg decoder
+# import sys
+# import librosa
+# import audioread.ffdec  # Use ffmpeg decoder
 from data_utils.seq_dataset import SeqDataset
 from predictor import EffNetPredictor
 import torch
@@ -119,23 +119,6 @@ class TranscribeSinging(TuneflowPlugin):
     def run(self, song: Song, params: dict[str, Any], read_apis: ReadAPIs):
 
         audio = params["audio"]
-        # print(audio.keys())
-        
-        # print(dir(song._proto.tracks))
-        # print(dir(new_midi_track.clips))
-        # print(new_midi_track.type)
-
-        # new_track_id = params["midi"]
-        # new_track = song.get_track_by_id(track_id=new_track_id)
-        # new_clip = new_track.create_clip()
-
-        # # createTrack({
-        # #         type: TrackType.MIDI_TRACK,
-        # #         index: song.getTrackIndex(track.getId()),
-        # #         assignDefaultSamplerPlugin: true,
-        # #     });
-
-        song.print_all_tracks()
 
         if audio["sourceType"] == 'audioTrack':
             # print(type(audio["audioInfo"]))
@@ -147,15 +130,10 @@ class TranscribeSinging(TuneflowPlugin):
             if track.get_type() != TrackType.AUDIO_TRACK:
                 raise Exception("Can only transcribe audio tracks")
             
-            track_index = song.get_track_index_by_id(track_id=track_id) # selected audio track
-            # print(track_index)
             new_midi_track = song.create_track(type=TrackType.MIDI_TRACK, assign_default_sampler_plugin=True)
             
             clip_index = 0
             for clip in track.get_clips():
-
-                # print(dir(track._proto))
-                # print(dir(clip._proto))
 
                 if clip.get_type() != ClipType.AUDIO_CLIP:
                     raise Exception("Skip non-audio clip")
@@ -170,39 +148,21 @@ class TranscribeSinging(TuneflowPlugin):
                     insert_clip=True
                 )
 
-                # new_midi_track.insert_clip(index=clip_index, clip=new_clip)
-
-                # print(clip.get_clip_start_tick(), clip.get_clip_end_tick())
-
-                # clip_index = clip_index + 1
-
                 self._transcribe_clip(song, new_clip, audio_clip_data.audio_file_path, params["doSeparation"], params["onsetThreshold"], params["silenceThreshold"])
 
         elif audio["sourceType"] == 'file':
             print(type(audio["audioInfo"]))
+            # TODO
 
-        # print(sys.getsizeof(audio["audioInfo"]))
-        # aro = audioread.ffdec.FFmpegAudioFile(audio["audioInfo"])
-        # y, sr = librosa.load(aro)
-        # print(y)
-        # print(audio["audioInfo"].decode(encoding='UTF-16'))
-
-        # separate = params["separate"]
-        # print(separate)
-
-        # song.insert_track(index=track_index+1, track=new_midi_track)
-        # print(track.print_all_clips())
-        # print(new_midi_track.print_all_clips())
-        # print(song.print_all_tracks())
-
-    def _transcribe_clip(self,
-                         song: Song,
-                         new_clip: Clip,
-                         audio_file_path, 
-                         do_separation=False, 
-                         onset_threshold=0.4, 
-                         silence_threshold=0.5,
-                         ):
+    def _transcribe_clip(
+        self,
+        song: Song,
+        new_clip: Clip,
+        audio_file_path, 
+        do_separation=False, 
+        onset_threshold=0.4, 
+        silence_threshold=0.5,
+    ):
         test_dataset = SeqDataset(audio_file_path, song_id='1', do_svs=do_separation)
 
         results = {}
