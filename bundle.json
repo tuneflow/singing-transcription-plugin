@@ -1,0 +1,28 @@
+{
+    "plugins": [
+      {
+        "providerId": "hellwz",
+        "providerDisplayName": {
+          "zh": "WZW",
+          "en": "WZW"
+        },
+        "pluginId": "singing-transcription",
+        "pluginDisplayName": {
+            "zh": "人声转MIDI",
+            "en": "Singing Transcription"
+        },
+        "pluginDescription": {
+            "zh": "将人声歌声转为MIDI旋律",
+            "en": "Transcribe singing to MIDI notes"
+        },
+        "version": "1.0.0",
+        "supportedPlatforms": ["desktop"],
+        "isInDevelopment": true,
+        "minRequiredDesktopVersion": "1.8.9",
+        "options": {
+          "allowReset": false,
+          "allowManualApplyAdjust": true
+        }
+      }
+    ]
+}
