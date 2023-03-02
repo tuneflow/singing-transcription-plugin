@@ -123,7 +123,9 @@ class TranscribeSinging(TuneflowPlugin):
         if clip is None:
             raise Exception("Cannot find clip")
         clip_audio_data_list = params["clipAudioData"]
-        new_midi_track = song.create_track(type=TrackType.MIDI_TRACK, assign_default_sampler_plugin=True)
+        new_midi_track = song.create_track(type=TrackType.MIDI_TRACK, index=song.get_track_index(
+            track_id=track.get_id()),
+            assign_default_sampler_plugin=True)
 
         TranscribeSinging._transcribe_clip(predictor, song,
                                            new_midi_track,
