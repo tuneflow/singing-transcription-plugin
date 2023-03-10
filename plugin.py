@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tuneflow_py import TuneflowPlugin, Song, ParamDescriptor, WidgetType, TrackType, InjectSource, Track, Clip
+from tuneflow_py import TuneflowPlugin, Song, ParamDescriptor, WidgetType, TrackType, InjectSource, Track, Clip, TuneflowPluginTriggerData, ClipAudioDataInjectData
 from typing import Any
 from data_utils.seq_dataset import SeqDataset
 from predictor import EffNetPredictor
@@ -35,23 +35,6 @@ class TranscribeSinging(TuneflowPlugin):
                     "type": InjectSource.ClipAudioData.value,
                     "options": {
                         "clips": "selectedAudioClips"
-                    }
-                }
-            },
-            "selectedClipInfos": {
-                "displayName": {
-                    "zh": '选中片段',
-                    "en": 'Selected Clips',
-                },
-                "defaultValue": None,
-                "widget": {
-                    "type": WidgetType.NoWidget.value,
-                },
-                "hidden": True,
-                "injectFrom": {
-                    "type": InjectSource.SelectedClipInfos.value,
-                    "options": {
-                        "maxNumClips": 1
                     }
                 }
             },
@@ -114,15 +97,15 @@ class TranscribeSinging(TuneflowPlugin):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         predictor = EffNetPredictor(device=device, model_path=str(
             Path(__file__).parent.joinpath("models").joinpath("1005_e_4").absolute()))
-        selected_clip_infos = params["selectedClipInfos"]
-        selected_clip_info = selected_clip_infos[0]
-        track = song.get_track_by_id(selected_clip_info["trackId"])
+        trigger: TuneflowPluginTriggerData = params["trigger"]
+        trigger_entity_id = trigger["entities"][0]
+        track = song.get_track_by_id(trigger_entity_id["trackId"])
         if track is None:
             raise Exception("Cannot find track")
-        clip = track.get_clip_by_id(selected_clip_info["clipId"])
+        clip = track.get_clip_by_id(trigger_entity_id["clipId"])
         if clip is None:
             raise Exception("Cannot find clip")
-        clip_audio_data_list = params["clipAudioData"]
+        clip_audio_data_list: ClipAudioDataInjectData = params["clipAudioData"]
         new_midi_track = song.create_track(type=TrackType.MIDI_TRACK, index=song.get_track_index(
             track_id=track.get_id()),
             assign_default_sampler_plugin=True)
@@ -151,7 +134,7 @@ class TranscribeSinging(TuneflowPlugin):
             clip_end_tick=audio_clip.get_clip_end_tick(),
             insert_clip=True
         )
-        audio_start_tick = audio_clip.get_audio_clip_data().start_tick
+        audio_start_tick = audio_clip.get_audio_clip_data().start_tick  # type:ignore
         audio_start_time = song.tick_to_seconds(audio_start_tick)
         # TODO: Trim the audio so that we only transcribe the visible part.
         test_dataset = SeqDataset(audio_file_path, song_id='1', do_svs=do_separation)

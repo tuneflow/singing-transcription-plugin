@@ -17,12 +17,21 @@
         },
         "version": "1.0.0",
         "supportedPlatforms": ["desktop"],
-        "isInDevelopment": true,
         "minRequiredDesktopVersion": "1.8.9",
         "options": {
           "allowReset": false,
           "allowManualApplyAdjust": true
-        }
+        },
+        "triggers": [
+          {
+            "type": "selected-clips",
+            "config": {
+              "allowedClipTypes": ["audio"],
+              "maxNumClips": 1
+            }
+          }
+        ],
+        "categories": ["transcribe"]
       }
     ]
 }
