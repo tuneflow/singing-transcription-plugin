@@ -8,6 +8,9 @@ import torch
 from io import BytesIO
 from pathlib import Path
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+predictor = EffNetPredictor(device=device, model_path=str(
+    Path(__file__).parent.joinpath("models").joinpath("1005_e_4").absolute()))
 
 class TranscribeSinging(TuneflowPlugin):
     @staticmethod
@@ -94,9 +97,6 @@ class TranscribeSinging(TuneflowPlugin):
 
     @staticmethod
     def run(song: Song, params: dict[str, Any]):
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        predictor = EffNetPredictor(device=device, model_path=str(
-            Path(__file__).parent.joinpath("models").joinpath("1005_e_4").absolute()))
         trigger: TuneflowPluginTriggerData = params["trigger"]
         trigger_entity_id = trigger["entities"][0]
         track = song.get_track_by_id(trigger_entity_id["trackId"])
