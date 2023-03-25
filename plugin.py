@@ -5,8 +5,9 @@ from typing import Any
 from data_utils.seq_dataset import SeqDataset
 from predictor import EffNetPredictor
 import torch
-from io import BytesIO
 from pathlib import Path
+import tempfile
+import traceback
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 predictor = EffNetPredictor(device=device, model_path=str(
@@ -40,20 +41,6 @@ class TranscribeSinging(TuneflowPlugin):
                         "clips": "selectedAudioClips"
                     }
                 }
-            },
-            "doSeparation": {
-                "displayName": {
-                    "zh": '自动分离伴奏',
-                    "en": 'Automatic accompaniment separation',
-                },
-                "defaultValue": False,
-                "description": {
-                    "zh": '先自动分离音频中的伴奏，再进行人声转录',
-                    "en": 'Automatically separate the accompaniment from the audio first, then transcribe the vocals',
-                },
-                "widget": {
-                    "type": WidgetType.Switch.value,
-                },
             },
             "onsetThreshold": {
                 "displayName": {
@@ -110,13 +97,22 @@ class TranscribeSinging(TuneflowPlugin):
             track_id=track.get_id()),
             assign_default_sampler_plugin=True)
 
-        TranscribeSinging._transcribe_clip(predictor, song,
-                                           new_midi_track,
-                                           clip,
-                                           BytesIO(clip_audio_data_list[0]["audioData"]["data"]),
-                                           params["doSeparation"],
-                                           params["onsetThreshold"],
-                                           params["silenceThreshold"])
+        tmp_file = tempfile.NamedTemporaryFile(delete=True, suffix=clip_audio_data_list[0]["audioData"]["format"])
+        tmp_file.write(clip_audio_data_list[0]["audioData"]["data"])
+
+        try:
+            TranscribeSinging._transcribe_clip(predictor, song,
+                                            new_midi_track,
+                                            clip,
+                                            tmp_file.name,
+                                            False,
+                                            params["onsetThreshold"],
+                                            params["silenceThreshold"])
+        except Exception as e:
+            print(traceback.format_exc)
+        finally:
+            tmp_file.close()
+
 
     @staticmethod
     def _transcribe_clip(

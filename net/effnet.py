@@ -11,7 +11,7 @@ class EffNetb0(nn.Module):
         self.pitch_class = pitch_class
         # Create model
         torch.hub.list('rwightman/gen-efficientnet-pytorch')
-        self.effnet = torch.hub.load('rwightman/gen-efficientnet-pytorch', 'efficientnet_b0', pretrained=False)
+        self.effnet = torch.hub.load('rwightman/gen-efficientnet-pytorch', 'efficientnet_b0', pretrained=False, verbose=False)
         
         self.effnet.conv_stem = nn.Conv2d(1, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
         # Modify last linear layer
