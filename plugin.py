@@ -13,6 +13,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 predictor = EffNetPredictor(device=device, model_path=str(
     Path(__file__).parent.joinpath("models").joinpath("1005_e_4").absolute()))
 
+
 class TranscribeSinging(TuneflowPlugin):
     @staticmethod
     def provider_id():
@@ -38,7 +39,13 @@ class TranscribeSinging(TuneflowPlugin):
                 "injectFrom": {
                     "type": InjectSource.ClipAudioData.value,
                     "options": {
-                        "clips": "selectedAudioClips"
+                        "clips": "selectedAudioClips",
+                        "convert": {
+                            "toFormat": "ogg",
+                            "options": {
+                                "sampleRate": 44100
+                            }
+                        }
                     }
                 }
             },
@@ -102,17 +109,16 @@ class TranscribeSinging(TuneflowPlugin):
 
         try:
             TranscribeSinging._transcribe_clip(predictor, song,
-                                            new_midi_track,
-                                            clip,
-                                            tmp_file.name,
-                                            False,
-                                            params["onsetThreshold"],
-                                            params["silenceThreshold"])
+                                               new_midi_track,
+                                               clip,
+                                               tmp_file.name,
+                                               False,
+                                               params["onsetThreshold"],
+                                               params["silenceThreshold"])
         except Exception as e:
             print(traceback.format_exc)
         finally:
             tmp_file.close()
-
 
     @staticmethod
     def _transcribe_clip(
@@ -130,9 +136,8 @@ class TranscribeSinging(TuneflowPlugin):
             clip_end_tick=audio_clip.get_clip_end_tick(),
             insert_clip=True
         )
-        audio_start_tick = audio_clip.get_audio_clip_data().start_tick  # type:ignore
-        audio_start_time = song.tick_to_seconds(audio_start_tick)
-        # TODO: Trim the audio so that we only transcribe the visible part.
+        audio_clip_start_tick = audio_clip.get_clip_start_tick()
+        audio_start_time = song.tick_to_seconds(audio_clip_start_tick)
         test_dataset = SeqDataset(audio_file_path, song_id='1', do_svs=do_separation)
 
         results = {}
