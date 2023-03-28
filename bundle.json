@@ -31,7 +31,12 @@
             }
           }
         ],
-        "categories": ["transcribe"]
+        "categories": ["transcribe"],
+        "icon": {
+          "0.5x": "https://s.tuneflow.com/images/plugins/icons/singing_transcription/singing_transcription@0.5x.png",
+          "1x": "https://s.tuneflow.com/images/plugins/icons/singing_transcription/singing_transcription@1x.png",
+          "2x": "https://s.tuneflow.com/images/plugins/icons/singing_transcription/singing_transcription@2x.png"
+        }
       }
     ]
 }
