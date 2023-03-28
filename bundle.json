@@ -19,7 +19,7 @@
         "supportedPlatforms": ["desktop"],
         "minRequiredDesktopVersion": "1.9.1",
         "options": {
-          "allowReset": false,
+          "allowReset": true,
           "allowManualApplyAdjust": true
         },
         "triggers": [
